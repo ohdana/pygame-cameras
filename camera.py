@@ -40,23 +40,36 @@ class CameraGroup(pygame.sprite.Group):
     def __init__(self):
         super().__init__()
         self.display_surface = pygame.display.get_surface()
+        
+        self.offset = pygame.math.Vector2()
+        self.half_w = self.display_surface.get_size()[0] // 2
+        self.half_h = self.display_surface.get_size()[1] // 2
+        
         self.ground_surf = pygame.image.load('graphics/ground.png').convert_alpha()
         self.ground_rect = self.ground_surf.get_rect(topleft = (0,0))
+    
+    def center_target_camera(self, target):
+        self.offset.x = target.rect.centerx - self.half_w
+        self.offset.y = target.rect.centery - self.half_h
+    
+    def custom_draw(self, player):
+        self.center_target_camera(player)
         
-    def custom_draw(self):
         # ground
-        self.display_surface.blit(self.ground_surf, self.ground_rect)
+        ground_offset = self.ground_rect.topleft - self.offset
+        self.display_surface.blit(self.ground_surf, ground_offset)
         
         # active elements
         for sprite in sorted(self.sprites(), key = lambda sprite: sprite.rect.centery):
-            self.display_surface.blit(sprite.image, sprite.rect)
+            offset_pos = sprite.rect.topleft - self.offset
+            self.display_surface.blit(sprite.image, offset_pos)
 
 pygame.init()
 screen = pygame.display.set_mode((1280,720))
 clock = pygame.time.Clock()
 
 camera_group = CameraGroup()
-Player((640,360), camera_group)
+player = Player((640,360), camera_group)
 
 for i in range(20):
     random_x = randint(0,1000)
@@ -72,7 +85,7 @@ while True:
     screen.fill('#71ddee')
     
     camera_group.update()
-    camera_group.custom_draw()
+    camera_group.custom_draw(player)
     
     pygame.display.update()
     clock.tick(60)
