@@ -56,7 +56,8 @@ class CameraGroup(pygame.sprite.Group):
         
         self.ground_surf = pygame.image.load('graphics/ground.png').convert_alpha()
         self.ground_rect = self.ground_surf.get_rect(topleft = (0,0))
-    
+        self.keyboard_speed = 5
+  
     def center_target_camera(self, target):
         self.offset.x = target.rect.centerx - self.half_w
         self.offset.y = target.rect.centery - self.half_h
@@ -74,7 +75,20 @@ class CameraGroup(pygame.sprite.Group):
         self.offset.x = self.camera_rect.left - self.camera_borders['left']
         self.offset.y = self.camera_rect.top - self.camera_borders['top']
     
+    def keyboard_control(self):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_a]:
+            self.camera_rect.x -= self.keyboard_speed
+        if keys[pygame.K_d]:
+            self.camera_rect.x += self.keyboard_speed
+        if keys[pygame.K_w]:
+            self.camera_rect.y -= self.keyboard_speed
+        if keys[pygame.K_s]:
+            self.camera_rect.y += self.keyboard_speed
+    
     def custom_draw(self, player):
+        self.keyboard_control()
+        
         #self.center_target_camera(player)
         self.box_target_camera(player)
         
