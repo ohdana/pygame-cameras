@@ -57,6 +57,7 @@ class CameraGroup(pygame.sprite.Group):
         self.ground_surf = pygame.image.load('graphics/ground.png').convert_alpha()
         self.ground_rect = self.ground_surf.get_rect(topleft = (0,0))
         self.keyboard_speed = 5
+        self.mouse_speed = 0.4
   
     def center_target_camera(self, target):
         self.offset.x = target.rect.centerx - self.half_w
@@ -77,20 +78,54 @@ class CameraGroup(pygame.sprite.Group):
     
     def keyboard_control(self):
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_a]:
-            self.camera_rect.x -= self.keyboard_speed
-        if keys[pygame.K_d]:
-            self.camera_rect.x += self.keyboard_speed
-        if keys[pygame.K_w]:
-            self.camera_rect.y -= self.keyboard_speed
-        if keys[pygame.K_s]:
-            self.camera_rect.y += self.keyboard_speed
+        if keys[pygame.K_a]: self.camera_rect.x -= self.keyboard_speed
+        if keys[pygame.K_d]: self.camera_rect.x += self.keyboard_speed
+        if keys[pygame.K_w]: self.camera_rect.y -= self.keyboard_speed
+        if keys[pygame.K_s]: self.camera_rect.y += self.keyboard_speed
     
-    def custom_draw(self, player):
-        self.keyboard_control()
+    def mouse_control(self):
+        mouse = pygame.math.Vector2(pygame.mouse.get_pos())
+        mouse_offset_vector = pygame.math.Vector2()
         
-        #self.center_target_camera(player)
-        self.box_target_camera(player)
+        left_border = self.camera_borders['left']
+        top_border = self.camera_borders['top']
+        right_border = self.display_surface.get_size()[0] - self.camera_borders['right']
+        bottom_border = self.display_surface.get_size()[1] - self.camera_borders['bottom']
+        
+        if top_border < mouse.y < bottom_border:
+            if mouse.x < left_border:
+                mouse_offset_vector.x = mouse.x - left_border
+                pygame.mouse.set_pos((left_border, mouse.y))
+            if mouse.x > right_border:
+                mouse_offset_vector.x = mouse.x - right_border
+                pygame.mouse.set_pos((right_border, mouse.y))
+        elif mouse.y < top_border:
+            if mouse.x < left_border:
+                mouse_offset_vector = mouse - pygame.math.Vector2(left_border, top_border)
+                pygame.mouse.set_pos((left_border, top_border))
+            if mouse.x > right_border:
+                mouse_offset_vector = mouse - pygame.math.Vector2(right_border, top_border)
+                pygame.mouse.set_pos((right_border, top_border))
+        elif mouse.y > bottom_border:
+            if mouse.x < left_border:
+                mouse_offset_vector = mouse - pygame.math.Vector2(left_border, bottom_border)
+                pygame.mouse.set_pos((left_border, bottom_border))
+            if mouse.x > right_border:
+                mouse_offset_vector = mouse - pygame.math.Vector2(right_border, bottom_border)
+                pygame.mouse.set_pos((right_border, bottom_border))
+                
+        if left_border < mouse.x < right_border:
+            if mouse.y < top_border:
+                mouse_offset_vector.y = mouse.y - top_border
+                pygame.mouse.set_pos((mouse.x, top_border))
+            if mouse.y > bottom_border:
+                mouse_offset_vector.y = mouse.y - bottom_border
+                pygame.mouse.set_pos((mouse.x, bottom_border))
+        
+        self.offset += mouse_offset_vector * self.mouse_speed
+        
+    def custom_draw(self, player):
+        self.mouse_control()
         
         # ground
         ground_offset = self.ground_rect.topleft - self.offset
@@ -104,6 +139,7 @@ class CameraGroup(pygame.sprite.Group):
 pygame.init()
 screen = pygame.display.set_mode((1280,720))
 clock = pygame.time.Clock()
+pygame.event.set_grab(True)
 
 camera_group = CameraGroup()
 player = Player((640,360), camera_group)
@@ -118,6 +154,10 @@ while True:
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                pygame.quit()
+                sys.exit()
             
     screen.fill('#71ddee')
     
